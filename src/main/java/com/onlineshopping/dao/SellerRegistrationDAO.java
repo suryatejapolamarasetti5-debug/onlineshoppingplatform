@@ -3,6 +3,7 @@ package com.onlineshopping.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 
 import com.onlineshopping.util.DBConnection;
 
@@ -11,109 +12,127 @@ public class SellerRegistrationDAO {
     public boolean registerSeller(
             String username,
             String password,
+            String ownerName,
             String businessName,
+            String email,
             String phone,
-            String address,
             int cityId) {
 
         Connection con = null;
 
         try {
-
             con = DBConnection.getConnection();
-
             con.setAutoCommit(false);
 
-            // Check whether username already exists
+            // Check for an existing username.
             String checkSql =
-                    "SELECT user_id FROM user_account WHERE username = ?";
+                "SELECT user_id FROM user_account WHERE username = ?";
 
-            try (PreparedStatement checkPs =
-                    con.prepareStatement(checkSql)) {
+            try (PreparedStatement ps = con.prepareStatement(checkSql)) {
+                ps.setString(1, username);
 
-                checkPs.setString(1, username);
-
-                ResultSet rs = checkPs.executeQuery();
-
-                if (rs.next()) {
-                    return false;
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        con.rollback();
+                        return false;
+                    }
                 }
             }
 
-            // Insert user account
+            // Check for an existing seller email.
+            String emailSql =
+                "SELECT seller_id FROM seller WHERE email = ?";
+
+            try (PreparedStatement ps = con.prepareStatement(emailSql)) {
+                ps.setString(1, email);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        con.rollback();
+                        return false;
+                    }
+                }
+            }
+
+            // Create the seller's login account.
             String userSql =
-                    "INSERT INTO user_account "
-                    + "(username, password_hash, role_id) "
-                    + "SELECT ?, ?, role_id "
-                    + "FROM role "
-                    + "WHERE role_name = 'SELLER'";
+                "INSERT INTO user_account "
+                + "(username, password_hash, role_id) "
+                + "SELECT ?, ?, role_id FROM role "
+                + "WHERE role_name = 'SELLER'";
 
             int userId;
 
-            try (PreparedStatement userPs =
-                    con.prepareStatement(
-                            userSql,
-                            java.sql.Statement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement ps = con.prepareStatement(
+                    userSql, Statement.RETURN_GENERATED_KEYS)) {
 
-                userPs.setString(1, username);
-                userPs.setString(2, password);
+                ps.setString(1, username);
+                ps.setString(2, password);
 
-                userPs.executeUpdate();
+                int rows = ps.executeUpdate();
 
-                ResultSet keys = userPs.getGeneratedKeys();
-
-                if (!keys.next()) {
+                if (rows != 1) {
                     con.rollback();
                     return false;
                 }
 
-                userId = keys.getInt(1);
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (!keys.next()) {
+                        con.rollback();
+                        return false;
+                    }
+
+                    userId = keys.getInt(1);
+                }
             }
 
-            // Insert seller profile
+            // Create the seller profile.
+            // seller_id is linked to the newly created user_id.
             String sellerSql =
-                    "INSERT INTO seller "
-                    + "(user_id, business_name, phone, address, city_id) "
-                    + "VALUES (?, ?, ?, ?, ?)";
+                "INSERT INTO seller "
+                + "(seller_id, shop_name, owner_name, email, phone, city_id) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
 
-            try (PreparedStatement sellerPs =
-                    con.prepareStatement(sellerSql)) {
+            try (PreparedStatement ps = con.prepareStatement(sellerSql)) {
+                ps.setInt(1, userId);
+                ps.setString(2, businessName);
+                ps.setString(3, ownerName);
+                ps.setString(4, email);
 
-                sellerPs.setInt(1, userId);
-                sellerPs.setString(2, businessName);
-                sellerPs.setString(3, phone);
-                sellerPs.setString(4, address);
-                sellerPs.setInt(5, cityId);
+                if (phone == null || phone.trim().isEmpty()) {
+                    ps.setNull(5, java.sql.Types.VARCHAR);
+                } else {
+                    ps.setString(5, phone.trim());
+                }
 
-                sellerPs.executeUpdate();
+                ps.setInt(6, cityId);
+
+                ps.executeUpdate();
             }
 
             con.commit();
-
             return true;
 
         } catch (Exception e) {
-
             e.printStackTrace();
 
-            try {
-                if (con != null) {
+            if (con != null) {
+                try {
                     con.rollback();
+                } catch (Exception rollbackError) {
+                    rollbackError.printStackTrace();
                 }
-            } catch (Exception rollbackError) {
-                rollbackError.printStackTrace();
             }
 
             return false;
 
         } finally {
-
-            try {
-                if (con != null) {
+            if (con != null) {
+                try {
                     con.close();
+                } catch (Exception closeError) {
+                    closeError.printStackTrace();
                 }
-            } catch (Exception closeError) {
-                closeError.printStackTrace();
             }
         }
     }

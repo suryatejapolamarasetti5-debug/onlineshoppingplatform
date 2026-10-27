@@ -1,62 +1,72 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Seller Registration</title>
+    <title>Seller Registration - CityShop</title>
 </head>
-
 <body>
 
-<h1>Seller Registration</h1>
+    <h1>Register as a Seller</h1>
 
-<form action="seller-register" method="post">
+    <% if ("1".equals(request.getParameter("error"))) { %>
+        <p style="color:red;">
+            Registration failed. Check your details or contact support.
+        </p>
+    <% } %>
 
-    <label>Username:</label>
-    <input type="text" name="username" required>
-    <br><br>
+    <% if ("exists".equals(request.getParameter("error"))) { %>
+        <p style="color:red;">
+            That username or email may already be registered.
+        </p>
+    <% } %>
 
-    <label>Password:</label>
-    <input type="password" name="password" required>
-    <br><br>
+    <form action="<%= request.getContextPath() %>/seller-register"
+          method="post">
 
-    <label>Business Name:</label>
-    <input type="text" name="businessName" required>
-    <br><br>
+        <label>Username:</label>
+        <input type="text" name="username" maxlength="50" required>
+        <br><br>
 
-    <label>Phone:</label>
-    <input type="text" name="phone" required>
-    <br><br>
+        <label>Password:</label>
+        <input type="password" name="password" required>
+        <br><br>
 
-    <label>Address:</label>
-    <textarea name="address" required></textarea>
-    <br><br>
+        <label>Owner Name:</label>
+        <input type="text" name="ownerName" maxlength="100" required>
+        <br><br>
 
-    <label>City:</label>
+        <label>Business / Shop Name:</label>
+        <input type="text" name="businessName" maxlength="100" required>
+        <br><br>
 
-    <select name="cityId" required>
+        <label>Email:</label>
+        <input type="email" name="email" maxlength="100" required>
+        <br><br>
 
-        <option value="">-- Select City --</option>
+        <label>Phone:</label>
+        <input type="tel" name="phone" maxlength="15">
+        <br><br>
 
-        <option value="1">Hyderabad</option>
-        <option value="2">Visakhapatnam</option>
-        <option value="3">Vijayawada</option>
-        <option value="4">Bengaluru</option>
-        <option value="5">Chennai</option>
+        <label>City:</label>
+        <select name="cityId" required>
+            <option value="">-- Select City --</option>
+            <option value="1">Visakhapatnam</option>
+            <option value="2">Vijayawada</option>
+            <option value="3">Hyderabad</option>
+            <option value="14">Bengaluru</option>
+            <option value="15">Chennai</option>
+        </select>
+        <br><br>
 
-    </select>
+        <button type="submit">Register as Seller</button>
+    </form>
 
-    <br><br>
-
-    <button type="submit">Register as Seller</button>
-
-</form>
-
-<br>
-
-<a href="login.jsp">Already have an account? Login</a>
+    <br>
+    <a href="<%= request.getContextPath() %>/login.jsp">
+        Already have an account? Login
+    </a>
 
 </body>
 </html>

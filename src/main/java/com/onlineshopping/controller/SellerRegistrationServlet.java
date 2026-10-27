@@ -15,50 +15,44 @@ public class SellerRegistrationServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    protected void doPost(
-            HttpServletRequest request,
-            HttpServletResponse response)
+    @Override
+    protected void doPost(HttpServletRequest request,
+                          HttpServletResponse response)
             throws ServletException, IOException {
 
-        String username =
-                request.getParameter("username");
+        request.setCharacterEncoding("UTF-8");
 
-        String password =
-                request.getParameter("password");
+        String username = request.getParameter("username");
+        String password = request.getParameter("password");
+        String ownerName = request.getParameter("ownerName");
+        String businessName = request.getParameter("businessName");
+        String email = request.getParameter("email");
+        String phone = request.getParameter("phone");
+        String cityValue = request.getParameter("cityId");
 
-        String businessName =
-                request.getParameter("businessName");
+        int cityId;
 
-        String phone =
-                request.getParameter("phone");
+        try {
+            cityId = Integer.parseInt(cityValue);
+        } catch (NumberFormatException e) {
+            response.sendRedirect(
+                request.getContextPath() + "/seller-register.jsp?error=1");
+            return;
+        }
 
-        String address =
-                request.getParameter("address");
+        SellerRegistrationDAO dao = new SellerRegistrationDAO();
 
-        int cityId =
-                Integer.parseInt(request.getParameter("cityId"));
-
-        SellerRegistrationDAO dao =
-                new SellerRegistrationDAO();
-
-        boolean success =
-                dao.registerSeller(
-                        username,
-                        password,
-                        businessName,
-                        phone,
-                        address,
-                        cityId);
+        boolean success = dao.registerSeller(
+            username, password, ownerName,
+            businessName, email, phone, cityId
+        );
 
         if (success) {
-
             response.sendRedirect(
-                    "login.jsp?registered=1");
-
+                request.getContextPath() + "/login.jsp?registered=1");
         } else {
-
             response.sendRedirect(
-                    "seller-register.jsp?error=1");
+                request.getContextPath() + "/seller-register.jsp?error=1");
         }
     }
 }

@@ -11,7 +11,7 @@ public class DBConnection {
 
     private static final String USER = "root";
 
-    private static final String PASSWORD = "munn@";
+    private static final String PASSWORD = "Mysql@jayanth7";
 
     public static Connection getConnection() throws SQLException {
 
